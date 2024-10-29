@@ -228,6 +228,14 @@ class Project(PartialProject):
             raise exceptions.Unauthorized(
                 "You need to be authenticated as the profile owner to do this.")
 
+    @property
+    def embed_url(self):
+        """
+        Returns:
+             the url of the embed of the project
+        """
+        return f"{self.url}/embed"
+
     def load_description(self):
         # Overrides the load_description method that exists for unshared projects
         self.update()
