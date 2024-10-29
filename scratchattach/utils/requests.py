@@ -9,7 +9,7 @@ class Requests:
     """
 
     @staticmethod
-    def check_response(r : requests.Response):
+    def check_response(r: requests.Response):
         if r.status_code == 403 or r.status_code == 401:
             raise exceptions.Unauthorized
         if r.status_code == 500:
