@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import warnings
-from typing import Final
-
-from . import block
-from . import base, commons, prim
 from dataclasses import dataclass
+from typing import Final, Any
+
+from . import base, commons, prim
+from . import block
 
 
 @dataclass(init=True)
@@ -35,17 +35,33 @@ class ShadowStatuses:
 
 
 class Input(base.BlockSubComponent):
-    def __init__(self, _shadow: ShadowStatus | None = ShadowStatuses.HAS_SHADOW, _value: prim.Prim | block.Block | str = None, _id: str = None,
-                 _obscurer: prim.Prim | block.Block | str = None, *, _obscurer_id: str = None, _block: block.Block = None):
+    def __init__(self, _shadow: ShadowStatus | None = ShadowStatuses.HAS_SHADOW,
+                 _value: prim.Prim | block.Block | list[block.Block] | str = None, _id: str = None,
+                 _obscurer: prim.Prim | block.Block | str = None, *, _obscurer_id: str = None,
+                 _block: block.Block = None):
         """
         An input for a scratch block
         https://en.scratch-wiki.info/wiki/Scratch_File_Format#Blocks:~:text=inputs,it.%5B9%5D
         """
         super().__init__(_block)
 
+        if isinstance(_value, list):
+            _value = _value[0]
+
+        elif not (isinstance(_value, prim.Prim) or isinstance(_value, block.Block)):
+            _value = prim.Prim(_value=_value, _primtype=prim.PrimTypes.STRING)
+
+        if _obscurer is not None or _obscurer_id is not None:
+            _shadow = ShadowStatuses.OBSCURED
+
+            # Some defaulting if you are editing a project using python
+            if isinstance(_value, block.Block):
+                _value.is_shadow = True
+            if isinstance(_obscurer, block.Block):
+                _obscurer.is_shadow = False
+
         # If the shadow is None, we'll have to work it out later
         self.shadow = _shadow
-
         self.value: prim.Prim | block.Block = _value
         self.obscurer: prim.Prim | block.Block = _obscurer
 
@@ -102,8 +118,9 @@ class Input(base.BlockSubComponent):
             else:
                 warnings.warn(f"Bad prim/block {pblock!r} of type {type(pblock)}")
 
-        add_pblock(self.value)
+        # If there is an obscured shadow, it comes after the obscurer (i.e. obscurer comes before shadow if there is an obscurer)
         add_pblock(self.obscurer)
+        add_pblock(self.value)
 
         return data
 
@@ -130,3 +147,10 @@ class Input(base.BlockSubComponent):
         # Link obscurer to sprite
         if self.obscurer is not None:
             self.obscurer.sprite = self.sprite
+
+
+def gen_inp(value: Any | Input):
+    if isinstance(value, Input):
+        return value
+    else:
+        return Input(_value=value)

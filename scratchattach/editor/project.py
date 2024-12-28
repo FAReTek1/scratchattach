@@ -249,7 +249,10 @@ class Project(base.JSONExtractable):
         if multiple:
             return _ret
 
-    def export(self, fp: str, *, auto_open: bool = False, export_as_zip: bool = True):
+    def export(self, fp: str=None, *, auto_open: bool = False, export_as_zip: bool = True):
+        if fp is None:
+            fp = f"{self.name}.sb3"
+
         data = self.to_json()
 
         if export_as_zip:

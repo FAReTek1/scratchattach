@@ -6,86 +6,70 @@ May want to completely change this later
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from typing import Self, Any, overload
 
-from . import prim
-from ..utils.enums import _EnumWrapper
-
-
-@dataclass(init=True, repr=True)
-class FieldUsage:
-    name: str
-    value_type: prim.PrimTypes = None
+from . import block, sprite, mutation, field, inputs, build_defaulting
 
 
-@dataclass(init=True, repr=True)
-class SpecialFieldUsage(FieldUsage):
-    name: str
-    attrs: list[str] = None
-    if attrs is None:
-        attrs = []
+class _Block(block.Block):
+    _opc: str = None
+    _init_attrs: dict[str, Any] = {}
 
-    value_type: None = None
+    # Overloaded function to provide arg/kwarg hinting
+    @overload
+    def __init__(self, _shadow: bool = False, _top_level: bool = None,
+                 _mutation: mutation.Mutation = None, _fields: dict[str, field.Field] = None,
+                 _inputs: dict[str, inputs.Input] = None, x: int = 0, y: int = 0, pos: tuple[int, int] = None,
 
+                 _next: block.Block = None, _parent: block.Block = None,
+                 *, _next_id: str = None, _parent_id: str = None,
+                 _sprite: sprite.Sprite = build_defaulting.SPRITE_DEFAULT): ...
 
-@dataclass(init=True, repr=True)
-class InputUsage:
-    name: str
-    value_type: prim.PrimTypes = None
-    default_obscurer: BlockUsage = None
+    def __init__(self, **kwargs):
+        for k, v in self._init_attrs.items():
+            if k not in kwargs:
+                kwargs[k] = v
 
-
-@dataclass(init=True, repr=True)
-class BlockUsage:
-    opcode: str
-    fields: list[FieldUsage] = None
-    if fields is None:
-        fields = []
-
-    inputs: list[InputUsage] = None
-    if inputs is None:
-        inputs = []
+        super().__init__(_opcode=self._opc, **kwargs)
 
 
-class BlockUsages(_EnumWrapper):
-    # Special Enum blocks
-    MATH_NUMBER = BlockUsage(
-        "math_number",
-        [SpecialFieldUsage("NUM", ["name", "value"])]
-    )
-    MATH_POSITIVE_NUMBER = BlockUsage(
-        "math_positive_number",
-        [SpecialFieldUsage("NUM", ["name", "value"])]
-    )
-    MATH_WHOLE_NUMBER = BlockUsage(
-        "math_whole_number",
-        [SpecialFieldUsage("NUM", ["name", "value"])]
-    )
-    MATH_INTEGER = BlockUsage(
-        "math_integer",
-        [SpecialFieldUsage("NUM", ["name", "value"])]
-    )
-    MATH_ANGLE = BlockUsage(
-        "math_angle",
-        [SpecialFieldUsage("NUM", ["name", "value"])]
-    )
-    COLOUR_PICKER = BlockUsage(
-        "colour_picker",
-        [SpecialFieldUsage("COLOUR", ["name", "value"])]
-    )
-    TEXT = BlockUsage(
-        "text",
-        [SpecialFieldUsage("TEXT", ["name", "value"])]
-    )
-    EVENT_BROADCAST_MENU = BlockUsage(
-        "event_broadcast_menu",
-        [SpecialFieldUsage("BROADCAST_OPTION", ["name", "id", "value", "variableType"])]
-    )
-    DATA_VARIABLE = BlockUsage(
-        "data_variable",
-        [SpecialFieldUsage("VARIABLE", ["name", "id", "value", "variableType"])]
-    )
-    DATA_LISTCONTENTS = BlockUsage(
-        "data_listcontents",
-        [SpecialFieldUsage("LIST", ["name", "id", "value", "variableType"])]
-    )
+class Motion:
+    class MoveSteps(_Block):
+        _opc = "motion_movesteps"
+
+        def set_steps(self, _inp: inputs.Input | Any) -> Self:
+            return self.add_input("STEPS", _inp)
+
+    class TurnRight(_Block):
+        _opc = "motion_turnright"
+
+        def set_degrees(self, _inp: inputs.Input | Any) -> Self:
+            return self.add_input("DEGREES", _inp)
+
+    class TurnLeft(_Block):
+        _opc = "motion_turnleft"
+
+        def set_degrees(self, _inp: inputs.Input | Any) -> Self:
+            return self.add_input("DEGREES", _inp)
+
+    class GoTo(_Block):
+        _opc = "motion_goto"
+
+        def set_to(self, _inp: inputs.Input | Any) -> Self:
+            return self.add_input("TO", _inp)
+
+    class GoToMenu(_Block):
+        _opc = "motion_goto_menu"
+        _init_attrs = _Block._init_attrs.copy()
+        _init_attrs.update({
+            "_shadow": True
+        })
+
+        def set_to(self, _fld: field.Field | Any) -> Self:
+            return self.add_field("TO", _fld)
+
+    class XPosition(_Block):
+        _opc = "motion_xposition"
+
+    class YPosition(_Block):
+        _opc = "motion_yposition"

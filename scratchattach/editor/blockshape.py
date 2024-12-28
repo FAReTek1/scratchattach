@@ -1,9 +1,8 @@
 """
-Enums stating the shape of a block from its opcode (i.e: stack, c-mouth, cap, hat etc)
+Enums stating the shape of a block from its opcode (i.e: stack, c-mouth, cap, hat etc).
 """
 from __future__ import annotations
 
-# Perhaps this should be merged with pallet.py
 from dataclasses import dataclass
 from typing import Final
 
@@ -12,6 +11,10 @@ from ..utils.enums import _EnumWrapper
 
 
 class _MutationDependent(commons.Singleton):
+    """
+    Singleton class replacing a boolean
+    """
+
     def __bool__(self):
         raise TypeError("Need mutation data to work out attribute value.")
 
@@ -20,7 +23,7 @@ MUTATION_DEPENDENT: Final[_MutationDependent] = _MutationDependent()
 """Value used when mutation data is required to work out the attribute value"""
 
 
-@dataclass(init=True, repr=True)
+@dataclass
 class BlockShape:
     """
     A class that describes the shape of a block; e.g. is it a stack, c-mouth, cap, hat reporter, boolean or menu block?

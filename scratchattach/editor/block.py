@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Iterable, Self
+from typing import Iterable, Self, Any
 
 from . import base, sprite, mutation, field, inputs, commons, vlb, blockshape, prim, comment, build_defaulting
 from ..utils import exceptions
@@ -13,7 +13,8 @@ class Block(base.SpriteSubComponent):
                  _inputs: dict[str, inputs.Input] = None, x: int = 0, y: int = 0, pos: tuple[int, int] = None,
 
                  _next: Block = None, _parent: Block = None,
-                 *, _next_id: str = None, _parent_id: str = None, _sprite: sprite.Sprite = build_defaulting.SPRITE_DEFAULT):
+                 *, _next_id: str = None, _parent_id: str = None,
+                 _sprite: sprite.Sprite = build_defaulting.SPRITE_DEFAULT):
         # Defaulting for args
         if _fields is None:
             _fields = {}
@@ -61,15 +62,22 @@ class Block(base.SpriteSubComponent):
             for subcomponent in iterable:
                 subcomponent.block = self
 
-    def add_input(self, name: str, _input: inputs.Input) -> Self:
+    def add_input(self, name: str, _input: inputs.Input | Any) -> Self:
+        _input = inputs.gen_inp(_input)
+        _input.block = self
+
         self.inputs[name] = _input
         for val in (_input.value, _input.obscurer):
             if isinstance(val, Block):
                 val.parent = self
+
         return self
 
     def add_field(self, name: str, _field: field.Field) -> Self:
+        _field = field.gen_fld(_field)
+
         self.fields[name] = _field
+        _field.block = self
         return self
 
     def set_mutation(self, _mutation: mutation.Mutation) -> Self:
@@ -504,4 +512,3 @@ class Block(base.SpriteSubComponent):
     def delete_chain(self):
         for _block in self.attached_chain:
             _block.delete_single_block()
-
